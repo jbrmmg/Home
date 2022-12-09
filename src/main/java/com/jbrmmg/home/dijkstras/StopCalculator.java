@@ -110,4 +110,43 @@ public class StopCalculator {
         routeRepository.saveAll(routes.values());
         log.info("Done");
     }
+
+    public String find(String stationName, Integer stops, Integer zones) {
+        // Load the stations.
+        List<Station> stations = new ArrayList<>();
+
+        for(Station station : stationRepository.findAll()) {
+            if(station.getName().toLowerCase().contains(stationName.toLowerCase())) {
+                stations.add(station);
+            }
+        }
+
+        String result = "";
+
+        for(Station station : stations) {
+            for(Route route : routeRepository.findAll()) {
+                if(route.getId().contains(station.getId())) {
+                    if(route.getStops() == stops) {
+                        if(zones <= 2) {
+                            if (route.getZones() == zones) {
+                                result += route.getStation1() + " " + route.getStation2() + " " + route.getStops() + " " + route.getZones();
+                                result += "\n";
+                            }
+                        } else {
+                            if (route.getZones() > 2) {
+                                result += route.getStation1() + " " + route.getStation2() + " " + route.getStops() + " " + route.getZones();
+                                result += "\n";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if(result.length() == 0) {
+            return "None";
+        }
+
+        return result;
+    }
 }

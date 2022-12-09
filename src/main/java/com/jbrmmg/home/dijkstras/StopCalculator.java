@@ -17,7 +17,7 @@ import java.util.*;
 
 @Component
 public class StopCalculator {
-    private static Logger log = LoggerFactory.getLogger(StopCalculator.class);
+    private static final Logger log = LoggerFactory.getLogger(StopCalculator.class);
 
     private final StationRepository stationRepository;
     private final ConnectionRepository connectionRepository;
@@ -68,8 +68,7 @@ public class StopCalculator {
         }
 
         // Load the connections.
-        List<Connection> connections = new ArrayList<>();
-        connections.addAll(connectionRepository.findAll());
+        List<Connection> connections = new ArrayList<>(connectionRepository.findAll());
 
         // Get the stations and create nodes for each.
         for(Station station : stations.values()) {

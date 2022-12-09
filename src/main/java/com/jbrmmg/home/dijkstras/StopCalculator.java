@@ -30,10 +30,10 @@ public class StopCalculator {
         this.routeRepository = routeRepository;
     }
 
-    public Graph calculateShortest(Station source) {
+    public Graph calculateShortest(Map<String,Station> stations, List<Connection> connections, Station source) {
         Map<String, Node> nodeMap = new HashMap<>();
         Node sourceNode = null;
-        for(Station station : stationRepository.findAll()) {
+        for(Station station : stations.values()) {
             nodeMap.put(station.getId(),new Node(station.getId()));
 
             if(source.getId().equals(station.getId())) {
@@ -41,7 +41,7 @@ public class StopCalculator {
             }
         }
 
-        for(Connection connection : connectionRepository.findAll()) {
+        for(Connection connection : connections) {
             String[] keys = connection.getId().split("-");
 
             Node node1 = nodeMap.get(keys[0]);
@@ -67,11 +67,15 @@ public class StopCalculator {
             stations.put(station.getId(),station);
         }
 
+        // Load the connections.
+        List<Connection> connections = new ArrayList<>();
+        connections.addAll(connectionRepository.findAll());
+
         // Get the stations and create nodes for each.
         for(Station station : stations.values()) {
             log.info("Calculate shortest for {}", station.getName());
 
-            Graph shortest = calculateShortest(station);
+            Graph shortest = calculateShortest(stations, connections, station);
 
             // Create the data from this.
             for(Node nextNode : shortest.getNodes()) {

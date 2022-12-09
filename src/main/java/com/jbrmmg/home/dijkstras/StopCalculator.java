@@ -61,6 +61,8 @@ public class StopCalculator {
     }
 
     public void calculateRoutes() {
+        routeRepository.deleteAll();
+
         // Load the stations.
         Map<String,Station> stations = new HashMap<>();
         for(Station station : stationRepository.findAll()) {
@@ -70,9 +72,13 @@ public class StopCalculator {
         // Load the connections.
         List<Connection> connections = new ArrayList<>(connectionRepository.findAll());
 
+        // Set-up a map of routes.
+        Map<String,Route> routes = new HashMap<>();
+
         // Get the stations and create nodes for each.
+        int count = 1;
         for(Station station : stations.values()) {
-            log.info("Calculate shortest for {}", station.getName());
+            log.info("Calculate shortest for {} {} {}", count, stations.size(), station.getName());
 
             Graph shortest = calculateShortest(stations, connections, station);
 
@@ -80,8 +86,7 @@ public class StopCalculator {
             for(Node nextNode : shortest.getNodes()) {
                 String id = Station.getConnectionId(nextNode.getName(),station.getId());
 
-                Optional<Route> alreadyExist = routeRepository.findById(id);
-                if(alreadyExist.isEmpty()) {
+                if(!routes.containsKey(id)) {
                     int stops = nextNode.getDistance();
                     Station other = stations.get(nextNode.getName());
 
@@ -94,9 +99,15 @@ public class StopCalculator {
                     newRoute.setStation1(station.getName());
                     newRoute.setStation2(other.getName());
 
-                    routeRepository.save(newRoute);
+                    routes.put(id,newRoute);
                 }
             }
+
+            count++;
         }
+
+        // Save the routes.
+        routeRepository.saveAll(routes.values());
+        log.info("Done");
     }
 }

@@ -1,0 +1,12 @@
+# https://wiki.ubuntu.com/SystemdForUpstartUsers
+# JBR MiddleTier Home Service
+
+[Unit]
+Description=JBR MiddleTier Home Service
+After=mysql.service
+
+[Service]
+ExecStart=/usr/bin/java -Xms768M -Xmx768M  -Dspring.profiles.active=pdn -jar /usr/bin/jbr/MiddleTier-Home-onejar.jar
+
+[Install]
+WantedBy=multi-user.target

@@ -1,2 +1,8 @@
 server:
   port: 12036
+
+logging.file.name: /var/log/jbr/MiddleTier-Home-PDN.log
+logging:
+  logback:
+    rollingpolicy:
+      max-history: 3

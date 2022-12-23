@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: jason
+
+      changes:
+        - createTable:
+            tableName: station
+            columns:
+              - column:
+                  name: id
+                  type: char(3)
+              - column:
+                  name: name
+                  type: varchar(40)
+              - column:
+                  name: full_id
+                  type: varchar(15)
+              - column:
+                  name: zone_1
+                  type: int
+              - column:
+                  name: zone_2
+                  type: int
+
+        - createTable:
+            tableName: line
+            columns:
+              - column:
+                  name: id
+                  type: char(40)
+              - column:
+                  name: name
+                  type: varchar(40)
+
+        - createTable:
+            tableName: connection
+            columns:
+              - column:
+                  name: id
+                  type: char(7)
+              - column:
+                  name: line_id
+                  type: char(40)
+              - column:
+                  name: station_1_id
+                  type: char(3)
+              - column:
+                  name: station_2_id
+                  type: char(3)
+
+        - createTable:
+            tableName: route
+            columns:
+              - column:
+                  name: id
+                  type: char(7)
+              - column:
+                  name: stops
+                  type: int
+              - column:
+                  name: zones
+                  type: int
+              - column:
+                  name: station_1
+                  type: varchar(40)
+              - column:
+                  name: station_2
+                  type: varchar(40)

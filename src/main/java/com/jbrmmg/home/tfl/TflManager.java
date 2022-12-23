@@ -20,7 +20,7 @@ import java.util.Optional;
 
 @Component
 public class TflManager {
-    private static Logger log = LoggerFactory.getLogger(TflManager.class);
+    private static final Logger log = LoggerFactory.getLogger(TflManager.class);
 
     private final LineRepository lineRepository;
     private final StationRepository stationRepository;

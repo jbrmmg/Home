@@ -9,8 +9,8 @@
 		<version>3.0.0</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
-	<groupId>com.jbr</groupId>
-	<artifactId>middle-home</artifactId>
+	<groupId>com.jbr.middle-home</groupId>
+	<artifactId>MiddleTier-Home</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>home</name>
 	<description>Home processes.</description>

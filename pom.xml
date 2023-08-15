@@ -14,9 +14,12 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<name>home</name>
 	<description>Home processes.</description>
+
 	<properties>
 		<java.version>17</java.version>
+		<deployment.script.artifact.name>Home</deployment.script.artifact.name>
 	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -81,6 +84,33 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 				<version>3.0.0</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.6.0</version>
+				<executions>
+					<execution>
+						<id>unpack</id>
+						<phase>package</phase>
+						<goals>
+							<goal>unpack</goal>
+						</goals>
+					</execution>
+				</executions>
+				<configuration>
+					<artifactItems>
+						<artifactItem>
+							<groupId>com.jbr.script</groupId>
+							<artifactId>Script</artifactId>
+							<version>0.1-dbg-SNAPSHOT</version>
+							<type>zip</type>
+							<overWrite>true</overWrite>
+							<outputDirectory>${project.build.directory}/scripts</outputDirectory>
+							<includes>**/*.sh</includes>
+						</artifactItem>
+					</artifactItems>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

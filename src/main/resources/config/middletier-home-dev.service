@@ -6,7 +6,7 @@ Description=JBR MiddleTier Home Service (DEV)
 After=mysql.service
 
 [Service]
-ExecStart=/usr/bin/java -Xms768M -Xmx768M -Dspring.profiles.active=dev -jar /usr/bin/jbr/dev/MiddleTier-Home-DEV-onejar.jar
+ExecStart=/usr/bin/java -Xms768M -Xmx768M -Dspring.profiles.active=dev -jar /usr/bin/jbr/dev/MiddleTier-Home-onejar.jar
 
 [Install]
 WantedBy=multi-user.target

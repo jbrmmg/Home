@@ -37,5 +37,17 @@
             <fileMode>0775</fileMode>
             <filtered>true</filtered>
         </file>
+        <file>
+            <source>${basedir}/src/main/resources/deployment/release.txt</source>
+            <outputDirectory>/</outputDirectory>
+            <destName>maven-releases-DeploymentDir.txt</destName>
+            <fileMode>0664</fileMode>
+        </file>
+        <file>
+            <source>${basedir}/src/main/resources/deployment/development.txt</source>
+            <outputDirectory>/</outputDirectory>
+            <destName>maven-snapshots-DeploymentDir.txt</destName>
+            <fileMode>0664</fileMode>
+        </file>
     </files>
 </assembly>

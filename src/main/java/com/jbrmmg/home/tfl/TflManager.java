@@ -40,12 +40,17 @@ public class TflManager {
         station.setName(stationData.name.replace(" Underground Station",""));
         station.setFullId(stationData.stationId);
 
-        String specialZone = stationData.zone.replace("/", "+");
-        String[] zones = specialZone.split("\\+");
+        if(stationData.zone != null) {
+            String specialZone = stationData.zone.replace("/", "+");
+            String[] zones = specialZone.split("\\+");
 
-        station.setZone1(Integer.parseInt(zones[0]));
-        if(zones.length > 1) {
-            station.setZone2(Integer.parseInt(zones[1]));
+            station.setZone1(Integer.parseInt(zones[0]));
+            if (zones.length > 1) {
+                station.setZone2(Integer.parseInt(zones[1]));
+            }
+        } else {
+            station.setZone1(2);
+            log.warn("Zone data missing {}",stationData.name);
         }
 
         return station;

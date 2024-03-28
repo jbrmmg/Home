@@ -49,8 +49,7 @@ public class TflManager {
                 station.setZone2(Integer.parseInt(zones[1]));
             }
         } else {
-            station.setZone1(2);
-            log.warn("Zone data missing {}",stationData.name);
+            throw new IllegalStateException("Zone is missing: " + stationData.stationId);
         }
 
         return station;

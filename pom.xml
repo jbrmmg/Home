@@ -1,17 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--suppress VulnerableLibrariesLocal -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>3.0.0</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.jbr.middle-home</groupId>
 	<artifactId>MiddleTier-Home</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>26.1.0</version>
 	<name>home</name>
 	<description>Home processes.</description>
 
@@ -27,7 +26,7 @@
 		<connection>scm:git:git@github.com:jbrmmg/Home.git</connection>
 		<developerConnection>scm:git:git@github.com:jbrmmg/Home.git</developerConnection>
 		<url>https://github.com/jbrmmg/Home</url>
-		<tag>HEAD</tag>
+		<tag>v26.1.0</tag>
 	</scm>
 
 	<dependencies>

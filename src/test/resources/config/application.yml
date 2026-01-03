@@ -32,5 +32,5 @@ home:
     smtp-host: smtp.zoho.eu
     smtp-port: 587
     smtp-sender: system@jbrmmg.me.uk
-    smtp-password: @email.smtp.password@
-    key: @password.key@
+    smtp-password:
+    key:

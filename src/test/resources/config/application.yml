@@ -1,0 +1,36 @@
+logging:
+  level:
+    ROOT: info
+
+spring:
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    url: jdbc:h2:mem:test;INIT=CREATE SCHEMA IF NOT EXISTS TEST;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+    hikari:
+      poolName: Hikari
+      auto-commit: false
+
+  h2:
+    console:
+      enabled: true
+
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+home:
+  allowed-recipients:
+    - jason@jbrmmg.me.uk
+    - martina@jbrmmg.me.uk
+    - cian@jbrmmg.me.uk
+    - thomas@jbrmmg.me.uk
+  email:
+    port: 1025
+    max: 30
+    smtp-host: smtp.zoho.eu
+    smtp-port: 587
+    smtp-sender: system@jbrmmg.me.uk
+    smtp-password:
+    key:

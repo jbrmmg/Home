@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.jbr.middle-home</groupId>
 	<artifactId>MiddleTier-Home</artifactId>
-	<version>26.1.0-SNAPSHOT</version>
+	<version>26.3.0</version>
 	<name>home</name>
 	<description>Home processes.</description>
 
@@ -26,7 +26,7 @@
 		<connection>scm:git:git@github.com:jbrmmg/Home.git</connection>
 		<developerConnection>scm:git:git@github.com:jbrmmg/Home.git</developerConnection>
 		<url>https://github.com/jbrmmg/Home</url>
-		<tag>HEAD</tag>
+		<tag>v26.3.0</tag>
 	</scm>
 
 	<dependencies>

@@ -54,3 +54,28 @@ The build produces a self-contained executable JAR and a deployment zip (via mav
 ```bash
 java -jar target/MiddleTier-Home-<version>.jar
 ```
+
+## Docker
+
+The Dockerfile is at `src/main/resources/docker/Dockerfile` and targets the `pdn` (production) Spring profile on port 12036.
+
+**Build** (requires a packaged JAR — run `mvn package` first):
+
+```bash
+docker build -f src/main/resources/docker/Dockerfile -t home .
+```
+
+**Run:**
+
+```bash
+docker run -d \
+  --restart unless-stopped \
+  -p 12036:12036 \
+  -v /var/log/jbr:/var/log/jbr \
+  -e HOME_EMAIL_SMTP_PASSWORD=<your-smtp-password> \
+  -e HOME_EMAIL_KEY=<your-aes-key> \
+  --name home \
+  home
+```
+
+The two environment variables override the `home.email.smtp-password` and `home.email.key` properties, which are normally substituted by Maven at build time. Logs are written to `/var/log/jbr/MiddleTier-Home-PDN.log` inside the container; mount a host directory there to persist them.

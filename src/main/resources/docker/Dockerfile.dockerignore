@@ -1,0 +1,6 @@
+src/
+*.md
+.git/
+target/surefire-reports/
+target/test-classes/
+target/archive-tmp/

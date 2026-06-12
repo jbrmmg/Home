@@ -32,7 +32,7 @@ home:
   allowed-recipients:
     - user@example.com
   email:
-    port: 2525          # port the local SMTP relay listens on
+    port: 1025          # port the local SMTP relay listens on
     max: 10             # max messages before rate-limiting kicks in
     smtp-host: smtp.example.com
     smtp-port: 587
@@ -71,6 +71,7 @@ docker build -f src/main/resources/docker/Dockerfile -t home .
 docker run -d \
   --restart unless-stopped \
   -p 12036:12036 \
+  -p 1025:1025 \
   -v /var/log/jbr:/var/log/jbr \
   -e HOME_EMAIL_SMTP_PASSWORD=<your-smtp-password> \
   -e HOME_EMAIL_KEY=<your-aes-key> \

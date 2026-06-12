@@ -10,5 +10,6 @@ ENV SPRING_PROFILES_ACTIVE=pdn
 VOLUME /var/log/jbr
 
 EXPOSE 12036
+EXPOSE 1025
 
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

@@ -3,9 +3,11 @@ services:
     image: myoung34/github-runner:latest
     container_name: home-runner
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       REPO_URL: https://github.com/jbrmmg/Home
-      RUNNER_TOKEN: ACY7E263H26HWXREQBLIZR3KGAET6
+      ACCESS_TOKEN: ${GITHUB_ACCESS_TOKEN}
       RUNNER_NAME: home-prod
       RUNNER_WORKDIR: /tmp/runner/work
       LABELS: self-hosted,home-prod

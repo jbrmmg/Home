@@ -1,13 +1,13 @@
-name: Build and Deploy
+name: Development Build
 
 on:
   push:
-    branches:
+    branches-ignore:
       - Release
 
 jobs:
   build:
-    runs-on: home-prod
+    runs-on: home-dev
 
     steps:
       - uses: actions/checkout@v4
@@ -66,15 +66,18 @@ jobs:
           </settings>
           EOF
 
-      - name: Build with Maven
-        run: mvn package -DskipTests
+      - name: Build and Test with Maven
+        run: mvn verify
+
+      - name: Run Sonar
+        run: mvn sonar:sonar -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
       - name: Build Docker image
         run: |
           docker build \
             -f src/main/resources/docker/Dockerfile \
-            -t nexus.jbrmmg.me.uk:8083/home:${{ github.sha }} \
-            -t nexus.jbrmmg.me.uk:8083/home:latest \
+            -t nexus.jbrmmg.me.uk:8083/home-dev:${{ github.sha }} \
+            -t nexus.jbrmmg.me.uk:8083/home-dev:latest \
             .
 
       - name: Push to Nexus Docker registry
@@ -82,8 +85,8 @@ jobs:
           docker login nexus.jbrmmg.me.uk:8083 \
             -u deployment \
             -p ${{ secrets.NEXUS_PASSWORD }}
-          docker push nexus.jbrmmg.me.uk:8083/home:${{ github.sha }}
-          docker push nexus.jbrmmg.me.uk:8083/home:latest
+          docker push nexus.jbrmmg.me.uk:8083/home-dev:${{ github.sha }}
+          docker push nexus.jbrmmg.me.uk:8083/home-dev:latest
 
       - name: Deploy
         env:
@@ -95,5 +98,5 @@ jobs:
             -p ${{ secrets.NEXUS_PASSWORD }}
           echo "SMTP_PASSWORD=${SMTP_PASSWORD}" > .env
           echo "EMAIL_KEY=${EMAIL_KEY}" >> .env
-          docker compose pull
-          docker compose up -d
+          docker compose -f docker-compose-dev.yml pull
+          docker compose -f docker-compose-dev.yml up -d

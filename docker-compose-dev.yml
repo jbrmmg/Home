@@ -1,0 +1,13 @@
+services:
+  home-dev:
+    image: nexus.jbrmmg.me.uk:8084/home-dev:latest
+    container_name: home-dev
+    restart: unless-stopped
+    ports:
+      - "12036:12036"
+      - "1025:1025"
+    environment:
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - EMAIL_KEY=${EMAIL_KEY}
+    volumes:
+      - /var/log/jbr:/var/log/jbr

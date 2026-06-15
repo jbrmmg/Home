@@ -91,11 +91,11 @@ To roll back to a previous release, update `docker-compose.yml` to reference the
 mvn package
 ```
 
-The build produces a self-contained executable JAR and a deployment zip (via maven-assembly-plugin).
+The build produces a self-contained executable JAR.
 
 ## Docker
 
-The Dockerfile is at `src/main/resources/docker/Dockerfile` and targets the `pdn` (production) Spring profile on port 12036.
+The Dockerfile is at `src/main/resources/docker/Dockerfile` and runs on port 12036. Logs go to stdout and are accessible via `docker logs`.
 
 To run locally using Docker Compose, create a `.env` file in the project root:
 
@@ -110,4 +110,4 @@ Then:
 docker compose up -d
 ```
 
-Logs are written to `/var/log/jbr/MiddleTier-Home-PDN.log` inside the container, persisted to the host via a volume mount.
+Logs are written to stdout and can be viewed with `docker logs home`.

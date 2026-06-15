@@ -90,6 +90,9 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           EMAIL_KEY: ${{ secrets.EMAIL_KEY }}
         run: |
+          docker login nexus.jbrmmg.me.uk:8084 \
+            -u deployment \
+            -p ${{ secrets.NEXUS_PASSWORD }}
           echo "SMTP_PASSWORD=${SMTP_PASSWORD}" > .env
           echo "EMAIL_KEY=${EMAIL_KEY}" >> .env
           docker compose pull

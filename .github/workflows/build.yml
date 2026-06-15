@@ -84,3 +84,13 @@ jobs:
             -p ${{ secrets.NEXUS_PASSWORD }}
           docker push nexus.jbrmmg.me.uk:8083/home:${{ github.sha }}
           docker push nexus.jbrmmg.me.uk:8083/home:latest
+
+      - name: Deploy
+        env:
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_KEY: ${{ secrets.EMAIL_KEY }}
+        run: |
+          echo "SMTP_PASSWORD=${SMTP_PASSWORD}" > .env
+          echo "EMAIL_KEY=${EMAIL_KEY}" >> .env
+          docker compose pull
+          docker compose up -d

@@ -37,9 +37,28 @@ home:
     smtp-host: smtp.example.com
     smtp-port: 587
     smtp-sender: sender@example.com
-    smtp-password: <encrypted>
-    key: <AES key for password decryption>
+    smtp-password: ${SMTP_PASSWORD}
+    key: ${EMAIL_KEY}
 ```
+
+The following environment variables must be set at runtime:
+
+| Variable | Description |
+|----------|-------------|
+| `SMTP_PASSWORD` | Password for the outbound SMTP host |
+| `EMAIL_KEY` | AES key used for password decryption |
+
+## CI/CD
+
+Pushing to the `Release` branch triggers a GitHub Actions workflow that:
+
+1. Builds the project with Maven
+2. Builds a Docker image and pushes it to the Nexus Docker registry tagged with the commit SHA and `latest`
+3. Writes a `.env` file with runtime secrets (sourced from GitHub secrets) and deploys via `docker compose`
+
+Required GitHub secrets: `NEXUS_PASSWORD`, `SMTP_PASSWORD`, `EMAIL_KEY`.
+
+To roll back to a previous release, update `docker-compose.yml` to reference the desired commit SHA tag and run `docker compose up -d`.
 
 ## Building
 
@@ -49,34 +68,21 @@ mvn package
 
 The build produces a self-contained executable JAR and a deployment zip (via maven-assembly-plugin).
 
-## Running
-
-```bash
-java -jar target/MiddleTier-Home-<version>.jar
-```
-
 ## Docker
 
 The Dockerfile is at `src/main/resources/docker/Dockerfile` and targets the `pdn` (production) Spring profile on port 12036.
 
-**Build** (requires a packaged JAR — run `mvn package` first):
+To run locally using Docker Compose, create a `.env` file in the project root:
 
-```bash
-docker build -f src/main/resources/docker/Dockerfile -t home .
+```
+SMTP_PASSWORD=your-smtp-password
+EMAIL_KEY=your-aes-key
 ```
 
-**Run:**
+Then:
 
 ```bash
-docker run -d \
-  --restart unless-stopped \
-  -p 12036:12036 \
-  -p 1025:1025 \
-  -v /var/log/jbr:/var/log/jbr \
-  -e HOME_EMAIL_SMTP_PASSWORD=<your-smtp-password> \
-  -e HOME_EMAIL_KEY=<your-aes-key> \
-  --name home \
-  home
+docker compose up -d
 ```
 
-The two environment variables override the `home.email.smtp-password` and `home.email.key` properties, which are normally substituted by Maven at build time. Logs are written to `/var/log/jbr/MiddleTier-Home-PDN.log` inside the container; mount a host directory there to persist them.
+Logs are written to `/var/log/jbr/MiddleTier-Home-PDN.log` inside the container, persisted to the host via a volume mount.

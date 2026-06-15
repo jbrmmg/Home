@@ -5,10 +5,10 @@ services:
     restart: unless-stopped
     environment:
       REPO_URL: https://github.com/jbrmmg/Home
-      RUNNER_TOKEN: ACY7E2ZTLVLUBO5E64R5S5LKGADAO
+      RUNNER_TOKEN: ACY7E263H26HWXREQBLIZR3KGAET6
       RUNNER_NAME: home-prod
       RUNNER_WORKDIR: /tmp/runner/work
-      LABELS: self-hosted
+      LABELS: self-hosted,home-prod
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - runner-work:/tmp/runner/work

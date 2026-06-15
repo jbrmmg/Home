@@ -18,6 +18,11 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Install Maven
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q maven
+
       - name: Configure Maven settings
         run: |
           mkdir -p ~/.m2

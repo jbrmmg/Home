@@ -48,6 +48,31 @@ The following environment variables must be set at runtime:
 | `SMTP_PASSWORD` | Password for the outbound SMTP host |
 | `EMAIL_KEY` | AES key used for password decryption |
 
+## GitHub Actions Runner
+
+The self-hosted runner is set up using Docker Compose from `src/main/resources/github/docker-compose.yml`.
+
+Two environment files are required in the same directory as the compose file (both are gitignored):
+
+**`.env`** — machine-specific, stable values:
+```
+RUNNER_NAME=home-prod        # or home-dev on the dev machine
+LABELS=self-hosted,home-prod # or self-hosted,home-dev on the dev machine
+```
+
+**`.env.secrets`** — the GitHub access token (updated frequently):
+```
+ACCESS_TOKEN=your-token-here
+```
+
+To start the runner:
+```bash
+cd src/main/resources/github
+docker compose up -d
+```
+
+The access token can be regenerated from GitHub → Settings → Actions → Runners. Update `.env.secrets` and restart the container (`docker compose restart`) when it changes.
+
 ## CI/CD
 
 Pushing to the `Release` branch triggers a GitHub Actions workflow that:

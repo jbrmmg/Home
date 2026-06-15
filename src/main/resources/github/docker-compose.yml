@@ -5,12 +5,12 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+      - .env.secrets
     environment:
       REPO_URL: https://github.com/jbrmmg/Home
-      ACCESS_TOKEN: ${GITHUB_ACCESS_TOKEN}
-      RUNNER_NAME: home-prod
+      RUNNER_NAME: ${RUNNER_NAME}
       RUNNER_WORKDIR: /tmp/runner/work
-      LABELS: self-hosted,home-prod
+      LABELS: ${LABELS}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - runner-work:/tmp/runner/work

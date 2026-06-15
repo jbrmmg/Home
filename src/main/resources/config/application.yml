@@ -1,3 +1,6 @@
+server:
+  port: 12036
+
 logging:
   level:
     ROOT: info

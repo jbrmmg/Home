@@ -9,5 +9,3 @@ services:
     environment:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - EMAIL_KEY=${EMAIL_KEY}
-    volumes:
-      - /var/log/jbr:/var/log/jbr

@@ -1,3 +1,5 @@
+name: home-runner
+
 services:
   github-runner:
     image: myoung34/github-runner:latest

@@ -6,7 +6,7 @@ services:
     ports:
       - "12036:12036"
       - "1025:1025"
-      - "5001:8080"
+      - "5002:8080"
     volumes:
       - /var/lib/home/data:/app/data
     environment:

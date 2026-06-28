@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tube Quiz Helper</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Arial, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+  h1 {
+    text-align: center;
+    color: #a0d4f5;
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    color: #a0d4f5;
+    font-size: 15px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* Status bar */
+  #status-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #2a2a4a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #555;
+    flex-shrink: 0;
+  }
+  .status-dot.ready    { background: #4caf50; }
+  .status-dot.busy     { background: #ff9800; }
+  .status-dot.error    { background: #f44336; }
+
+  #status-text { font-size: 13px; color: #aaa; flex: 1; }
+
+  /* Buttons */
+  button {
+    padding: 7px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  .btn-primary  { background: #4caf50; color: white; }
+  .btn-danger   { background: #f44336; color: white; }
+  .btn-secondary { background: #3a3a5a; color: #ccc; border: 1px solid #555; }
+  .btn-orange   { background: #ff9800; color: white; }
+
+  button:disabled { opacity: 0.45; cursor: default; }
+
+  /* Guess form */
+  #guess-form {
+    background: #2a2a4a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+
+  #guess-form .fields {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 8px;
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .field-group label {
+    font-size: 11px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  input[type="text"], input[type="number"] {
+    background: #1a1a2e;
+    border: 1px solid #555;
+    border-radius: 4px;
+    color: #eee;
+    padding: 6px 10px;
+    font-size: 14px;
+    outline: none;
+  }
+
+  input[type="text"] { width: 220px; }
+  input[type="number"] { width: 80px; }
+
+  input[type="text"]:focus, input[type="number"]:focus {
+    border-color: #4caf50;
+  }
+
+  .autocomplete-wrap { position: relative; display: inline-block; }
+
+  .autocomplete-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 220px;
+    max-height: 220px;
+    overflow-y: auto;
+    background: #1a1a2e;
+    border: 1px solid #4caf50;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    z-index: 100;
+  }
+
+  .autocomplete-dropdown.open { display: block; }
+
+  .ac-item {
+    padding: 6px 10px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #eee;
+  }
+
+  .ac-item:hover, .ac-item.active { background: #3a3a5a; }
+
+  .ac-item mark {
+    background: none;
+    color: #4caf50;
+    font-weight: bold;
+  }
+
+  #guess-error {
+    font-size: 12px;
+    color: #f44336;
+    min-height: 16px;
+  }
+
+  /* Guesses list */
+  #guesses-section {
+    background: #2a2a4a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+
+  #guesses-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .guess-chip {
+    background: #1a1a2e;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font-size: 13px;
+    font-family: monospace;
+  }
+
+  .guess-chip .station { color: #a0d4f5; font-weight: bold; }
+  .guess-chip .clue    { color: #888; margin-left: 6px; }
+
+  #no-guesses { font-size: 13px; color: #555; }
+
+  /* Results */
+  #results-section {
+    background: #2a2a4a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+
+  #results-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .results-col h3 {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #444;
+  }
+
+  .results-col .station-list {
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    line-height: 2;
+  }
+
+  .station-name {
+    display: block;
+    color: #eee;
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 0 4px;
+  }
+
+  .station-name:hover { background: #3a3a5a; }
+
+  .station-name.only-in-tfl    { color: #ff9800; }
+  .station-name.only-in-merged { color: #2196f3; }
+  .station-name.in-both        { color: #4caf50; }
+
+  .results-empty { font-size: 13px; color: #555; }
+
+  .loading {
+    font-size: 13px;
+    color: #888;
+    font-style: italic;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.3; }
+  }
+
+  .loading { animation: pulse 1.2s ease-in-out infinite; }
+
+  #results-count {
+    font-size: 12px;
+    color: #888;
+    margin-top: 10px;
+  }
+
+  details > summary::-webkit-details-marker { display: none; }
+
+  .breakdown-guess {
+    margin-bottom: 12px;
+  }
+
+  .breakdown-guess:last-child { margin-bottom: 0; }
+
+  .breakdown-label {
+    font-size: 12px;
+    color: #a0d4f5;
+    font-weight: bold;
+    margin-bottom: 4px;
+  }
+
+  .breakdown-label span { color: #888; font-weight: normal; margin-left: 6px; }
+
+  .breakdown-cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .breakdown-col h4 {
+    font-size: 11px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .breakdown-col .names {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: #aaa;
+    line-height: 1.7;
+    max-height: 120px;
+    overflow-y: auto;
+  }
+
+  .diff-legend {
+    display: flex;
+    gap: 14px;
+    font-size: 11px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+  }
+  .diff-legend span { display: flex; align-items: center; gap: 4px; }
+  .swatch {
+    width: 10px; height: 10px; border-radius: 2px; display: inline-block;
+  }
+</style>
+</head>
+<body>
+
+<h1>
+  <img src="{{ url_for('static', filename='favicon.svg') }}" alt="" style="width:32px;height:32px;vertical-align:middle;margin-right:10px;">
+  Tube Quiz Helper
+</h1>
+
+<!-- Status -->
+<div id="status-bar">
+  <div class="status-dot" id="status-dot"></div>
+  <span id="status-text">Checking...</span>
+  <button class="btn-orange" id="refresh-btn" onclick="refreshData()" disabled>Refresh TFL Data</button>
+</div>
+
+<!-- Guess form -->
+<div id="guess-form">
+  <h2>Add Guess</h2>
+  <div class="fields">
+    <div class="field-group">
+      <label>Station guessed</label>
+      <div class="autocomplete-wrap">
+        <input type="text" id="station" placeholder="e.g. Angel" autocomplete="off"
+               oninput="onStationInput()" onkeydown="onStationKey(event)">
+        <div class="autocomplete-dropdown" id="ac-dropdown"></div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>Stops away</label>
+      <input type="number" id="stops" placeholder="0" min="0" onkeydown="onEnter(event)">
+    </div>
+    <div class="field-group">
+      <label>Zones away</label>
+      <input type="number" id="zones" placeholder="0" min="0" onkeydown="onEnter(event)">
+    </div>
+    <button class="btn-primary" id="add-btn" onclick="addGuess()" disabled>Add</button>
+  </div>
+  <div id="guess-error"></div>
+</div>
+
+<!-- Current guesses -->
+<div id="guesses-section">
+  <h2>
+    Guesses
+    <button class="btn-danger" onclick="resetGuesses()" style="font-size:11px;padding:4px 10px;">Reset</button>
+  </h2>
+  <div id="guesses-list"><span id="no-guesses">No guesses yet.</span></div>
+</div>
+
+<!-- Results -->
+<div id="results-section">
+  <h2>Possible Stations</h2>
+  <div class="diff-legend">
+    <span><span class="swatch" style="background:#4caf50;"></span> Both views</span>
+    <span><span class="swatch" style="background:#ff9800;"></span> TFL only</span>
+    <span><span class="swatch" style="background:#2196f3;"></span> Merged only</span>
+  </div>
+  <div id="results-columns">
+    <div class="results-col">
+      <h3>TFL view</h3>
+      <div class="station-list" id="tfl-results"><span class="results-empty">—</span></div>
+    </div>
+    <div class="results-col">
+      <h3>Merged (quiz) view</h3>
+      <div class="station-list" id="merged-results"><span class="results-empty">—</span></div>
+    </div>
+  </div>
+  <div id="results-count"></div>
+</div>
+
+<!-- Per-guess breakdown -->
+<div id="breakdown-section" style="margin-top:16px; display:none;">
+  <details id="breakdown-details">
+    <summary style="cursor:pointer; color:#888; font-size:13px; padding:8px 14px;
+                    background:#2a2a4a; border:1px solid #444; border-radius:6px;
+                    list-style:none; display:flex; align-items:center; gap:8px;">
+      <span id="breakdown-arrow" style="font-size:10px;">▶</span>
+      <span>Debug: per-guess breakdown</span>
+    </summary>
+    <div id="breakdown-body" style="background:#2a2a4a; border:1px solid #444;
+                                     border-top:none; border-radius:0 0 6px 6px; padding:12px 14px;">
+      <div id="breakdown-content"></div>
+    </div>
+  </details>
+</div>
+
+<script>
+let dataReady = false;
+let statusPollTimer = null;
+
+function onEnter(e) {
+  if (e.key === 'Enter') addGuess();
+}
+
+async function checkStatus() {
+  const dot = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  const refreshBtn = document.getElementById('refresh-btn');
+  const addBtn = document.getElementById('add-btn');
+
+  try {
+    const r = await fetch('/api/status');
+    const s = await r.json();
+
+    if (s.error) {
+      dot.className = 'status-dot error';
+      text.textContent = 'Java API not reachable';
+      refreshBtn.disabled = false;
+      dataReady = false;
+    } else if (s.ready) {
+      dot.className = 'status-dot ready';
+      text.textContent = 'Ready';
+      refreshBtn.disabled = false;
+      addBtn.disabled = false;
+      if (!dataReady) loadStations();
+      dataReady = true;
+      clearInterval(statusPollTimer);
+      statusPollTimer = null;
+    } else if (!s.tflReady || !s.mergedReady) {
+      dot.className = 'status-dot busy';
+      const parts = [];
+      if (!s.tflReady) parts.push('TFL routes');
+      if (!s.mergedReady) parts.push('merged routes');
+      text.textContent = `Calculating ${parts.join(' & ')}…`;
+      refreshBtn.disabled = true;
+      addBtn.disabled = true;
+      dataReady = false;
+    } else {
+      dot.className = 'status-dot';
+      text.textContent = 'No data — click Refresh TFL Data to load';
+      refreshBtn.disabled = false;
+      dataReady = false;
+    }
+  } catch (e) {
+    dot.className = 'status-dot error';
+    text.textContent = 'Error checking status';
+    refreshBtn.disabled = false;
+    dataReady = false;
+  }
+}
+
+async function refreshData() {
+  const dot = document.getElementById('status-dot');
+  const text = document.getElementById('status-text');
+  document.getElementById('refresh-btn').disabled = true;
+  document.getElementById('add-btn').disabled = true;
+  dot.className = 'status-dot busy';
+  text.textContent = 'Fetching TFL data…';
+
+  try {
+    await fetch('/api/refresh', { method: 'POST' });
+  } catch (e) { /* ignore */ }
+
+  // Poll until done
+  if (statusPollTimer) clearInterval(statusPollTimer);
+  statusPollTimer = setInterval(checkStatus, 2000);
+  checkStatus();
+}
+
+async function addGuess() {
+  const station = document.getElementById('station').value.trim();
+  const stops = parseInt(document.getElementById('stops').value);
+  const zones = parseInt(document.getElementById('zones').value);
+  const errorEl = document.getElementById('guess-error');
+
+  errorEl.textContent = '';
+
+  if (!station) { errorEl.textContent = 'Enter a station name.'; return; }
+  if (isNaN(stops) || stops < 0) { errorEl.textContent = 'Enter a valid stops value.'; return; }
+  if (isNaN(zones) || zones < 0) { errorEl.textContent = 'Enter a valid zones value.'; return; }
+
+  const r = await fetch('/api/guess', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ station, stops, zones }),
+  });
+
+  if (!r.ok) {
+    const msg = await r.text();
+    errorEl.textContent = msg;
+    return;
+  }
+
+  document.getElementById('station').value = '';
+  document.getElementById('stops').value = '';
+  document.getElementById('zones').value = '';
+  document.getElementById('station').focus();
+
+  await refreshGuesses();
+  await refreshResults();
+  await refreshBreakdown();
+}
+
+async function resetGuesses() {
+  await fetch('/api/guesses', { method: 'DELETE' });
+  await refreshGuesses();
+  document.getElementById('tfl-results').innerHTML = '<span class="results-empty">—</span>';
+  document.getElementById('merged-results').innerHTML = '<span class="results-empty">—</span>';
+  document.getElementById('results-count').textContent = '';
+  document.getElementById('breakdown-section').style.display = 'none';
+}
+
+async function refreshGuesses() {
+  const r = await fetch('/api/guesses');
+  const guesses = await r.json();
+
+  const list = document.getElementById('guesses-list');
+  const noGuesses = document.getElementById('no-guesses');
+
+  if (!guesses.length) {
+    list.innerHTML = '<span id="no-guesses">No guesses yet.</span>';
+    return;
+  }
+
+  list.innerHTML = guesses.map(g =>
+    `<div class="guess-chip">
+       <span class="station">${g.station}</span>
+       <span class="clue">${g.stops} stop${g.stops !== 1 ? 's' : ''}, ${g.zones} zone${g.zones !== 1 ? 's' : ''}</span>
+     </div>`
+  ).join('');
+}
+
+async function refreshResults() {
+  document.getElementById('tfl-results').innerHTML = '<span class="loading">Calculating…</span>';
+  document.getElementById('merged-results').innerHTML = '<span class="loading">Calculating…</span>';
+  document.getElementById('results-count').textContent = '';
+
+  const r = await fetch('/api/results');
+  const data = await r.json();
+
+  const tflSet = new Set(data.tfl || []);
+  const mergedSet = new Set(data.merged || []);
+  const all = new Set([...tflSet, ...mergedSet]);
+  const sorted = [...all].sort();
+
+  function classify(name) {
+    const inTfl = tflSet.has(name);
+    const inMerged = mergedSet.has(name);
+    if (inTfl && inMerged) return 'in-both';
+    if (inTfl) return 'only-in-tfl';
+    return 'only-in-merged';
+  }
+
+  function renderList(names, containsName) {
+    if (!names.length) return '<span class="results-empty">No matches</span>';
+    return sorted
+      .filter(n => containsName(n))
+      .map(n => `<span class="station-name ${classify(n)}" onclick="selectStation('${n.replace(/'/g, "\\'")}')" title="Use as next guess">${n}</span>`)
+      .join('');
+  }
+
+  document.getElementById('tfl-results').innerHTML =
+    renderList(data.tfl, n => tflSet.has(n));
+  document.getElementById('merged-results').innerHTML =
+    renderList(data.merged, n => mergedSet.has(n));
+
+  const tflCount = tflSet.size;
+  const mergedCount = mergedSet.size;
+  document.getElementById('results-count').textContent =
+    tflCount || mergedCount
+      ? `${tflCount} TFL match${tflCount !== 1 ? 'es' : ''} · ${mergedCount} merged match${mergedCount !== 1 ? 'es' : ''}`
+      : '';
+}
+
+// Autocomplete
+let allStations = [];
+let acIndex = -1;
+
+async function loadStations() {
+  try {
+    const r = await fetch('/api/stations');
+    if (r.ok) allStations = await r.json();
+  } catch (e) { /* retry next status check */ }
+}
+
+function onStationInput() {
+  document.getElementById('guess-error').textContent = '';
+  const q = document.getElementById('station').value.trim().toLowerCase();
+  acIndex = -1;
+  if (!q) { closeDropdown(); return; }
+
+  const matches = allStations.filter(s => s.toLowerCase().includes(q)).slice(0, 20);
+  if (!matches.length) { closeDropdown(); return; }
+
+  const dropdown = document.getElementById('ac-dropdown');
+  dropdown.innerHTML = matches.map((s, i) => {
+    const idx = s.toLowerCase().indexOf(q);
+    const highlighted = s.slice(0, idx) +
+      '<mark>' + s.slice(idx, idx + q.length) + '</mark>' +
+      s.slice(idx + q.length);
+    return `<div class="ac-item" data-name="${s}" onmousedown="pickStation('${s.replace(/'/g, "\\'")}')">${highlighted}</div>`;
+  }).join('');
+  dropdown.classList.add('open');
+}
+
+function onStationKey(e) {
+  const dropdown = document.getElementById('ac-dropdown');
+  const items = dropdown.querySelectorAll('.ac-item');
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acIndex = Math.min(acIndex + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('active', i === acIndex));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acIndex = Math.max(acIndex - 1, -1);
+    items.forEach((el, i) => el.classList.toggle('active', i === acIndex));
+  } else if (e.key === 'Enter') {
+    if (acIndex >= 0 && items[acIndex]) {
+      e.preventDefault();
+      pickStation(items[acIndex].dataset.name);
+    } else {
+      closeDropdown();
+      addGuess();
+    }
+  } else if (e.key === 'Escape') {
+    closeDropdown();
+  }
+}
+
+function pickStation(name) {
+  document.getElementById('station').value = name;
+  closeDropdown();
+  document.getElementById('stops').focus();
+}
+
+function closeDropdown() {
+  document.getElementById('ac-dropdown').classList.remove('open');
+  acIndex = -1;
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.autocomplete-wrap')) closeDropdown();
+});
+
+// Clicking a result station pre-fills the guess form
+function selectStation(name) {
+  document.getElementById('station').value = name;
+  closeDropdown();
+  document.getElementById('stops').value = '';
+  document.getElementById('zones').value = '';
+  document.getElementById('guess-error').textContent = '';
+  document.getElementById('stops').focus();
+}
+
+async function refreshBreakdown() {
+  const section = document.getElementById('breakdown-section');
+  const content = document.getElementById('breakdown-content');
+
+  const r = await fetch('/api/breakdown');
+  const items = await r.json();
+
+  if (!items.length) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  content.innerHTML = items.map(item => `
+    <div class="breakdown-guess">
+      <div class="breakdown-label">
+        ${item.station}
+        <span>${item.stops} stop${item.stops !== 1 ? 's' : ''}, ${item.zones} zone${item.zones !== 1 ? 's' : ''}</span>
+        <span style="color:#4caf50;">${item.tfl.length} TFL · ${item.merged.length} merged</span>
+      </div>
+      <div class="breakdown-cols">
+        <div class="breakdown-col">
+          <h4>TFL</h4>
+          <div class="names">${item.tfl.length ? item.tfl.join('<br>') : '<span style="color:#555;">none</span>'}</div>
+        </div>
+        <div class="breakdown-col">
+          <h4>Merged</h4>
+          <div class="names">${item.merged.length ? item.merged.join('<br>') : '<span style="color:#555;">none</span>'}</div>
+        </div>
+      </div>
+    </div>
+  `).join('<hr style="border-color:#3a3a5a;margin:10px 0;">');
+}
+
+// Toggle arrow on breakdown expand/collapse
+document.addEventListener('DOMContentLoaded', () => {
+  const det = document.getElementById('breakdown-details');
+  if (det) {
+    det.addEventListener('toggle', () => {
+      document.getElementById('breakdown-arrow').textContent = det.open ? '▼' : '▶';
+    });
+  }
+});
+
+// Init
+checkStatus();
+refreshGuesses();
+loadStations();
+</script>
+</body>
+</html>

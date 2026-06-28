@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jbrmmg.home.tfl.line.mode.data.Line;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 public class Mode {
@@ -12,7 +13,10 @@ public class Mode {
     public static Line[] getLines() {
         try {
             String url = "https://api.tfl.gov.uk/Line/Mode/tube";
-            RestTemplate restTemplate = new RestTemplate();
+            SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+            factory.setConnectTimeout(10000);
+            factory.setReadTimeout(30000);
+            RestTemplate restTemplate = new RestTemplate(factory);
             String result = restTemplate.getForObject(url, String.class);
 
             ObjectMapper objectMapper = new ObjectMapper();

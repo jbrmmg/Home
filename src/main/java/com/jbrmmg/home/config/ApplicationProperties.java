@@ -12,4 +12,5 @@ import java.util.List;
 public class ApplicationProperties {
     private List<String> allowedRecipients;
     private EmailProperties email;
+    private List<List<String>> stationMerges;
 }

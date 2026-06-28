@@ -8,7 +8,7 @@ logging:
 spring:
   datasource:
     type: com.zaxxer.hikari.HikariDataSource
-    url: jdbc:h2:mem:test;INIT=CREATE SCHEMA IF NOT EXISTS TEST;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:file:./data/home;AUTO_SERVER=TRUE
     username: sa
     password:
     hikari:
@@ -19,11 +19,18 @@ spring:
     console:
       enabled: true
 
+  jpa:
+    hibernate:
+      ddl-auto: update
+
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
 
 home:
+  station-merges:
+    - - Moorgate
+      - Liverpool Street
   allowed-recipients:
     - jason@jbrmmg.me.uk
     - martina@jbrmmg.me.uk

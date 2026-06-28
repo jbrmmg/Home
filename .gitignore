@@ -38,4 +38,4 @@ build/
 .env
 .env.secrets
 
-data
+/data

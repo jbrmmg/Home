@@ -1,4 +1,5 @@
-src/
+src/main/java/
+src/test/
 *.md
 .git/
 target/surefire-reports/

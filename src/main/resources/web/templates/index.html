@@ -137,6 +137,33 @@
     letter-spacing: 0.5px;
   }
 
+  .radio-group {
+    display: flex;
+    gap: 4px;
+  }
+
+  .radio-pill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 32px;
+    background: #1a1a2e;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #aaa;
+    user-select: none;
+  }
+
+  .radio-pill input[type="radio"] { display: none; }
+
+  .radio-pill:has(input[value="0"]:checked) { background: #1a3a1a; border-color: #4caf50; color: #4caf50; font-weight: bold; }
+  .radio-pill:has(input[value="1"]:checked) { background: #3a3a10; border-color: #cddc39; color: #cddc39; font-weight: bold; }
+  .radio-pill:has(input[value="2"]:checked) { background: #3a2510; border-color: #ff9800; color: #ff9800; font-weight: bold; }
+  .radio-pill:has(input[value="3"]:checked) { background: #3a1010; border-color: #f44336; color: #f44336; font-weight: bold; }
+
   input[type="text"], input[type="number"] {
     background: #1a1a2e;
     border: 1px solid #555;
@@ -474,7 +501,12 @@
     </div>
     <div class="field-group">
       <label>Zones away</label>
-      <input type="number" id="zones" placeholder="0" min="0" onkeydown="onEnter(event)">
+      <div class="radio-group">
+        <label class="radio-pill"><input type="radio" name="zones" value="0" checked> 0</label>
+        <label class="radio-pill"><input type="radio" name="zones" value="1"> 1</label>
+        <label class="radio-pill"><input type="radio" name="zones" value="2"> 2</label>
+        <label class="radio-pill"><input type="radio" name="zones" value="3"> 3+</label>
+      </div>
     </div>
     <button class="btn-primary" id="add-btn" onclick="addGuess()" disabled>Add</button>
   </div>
@@ -682,14 +714,13 @@ async function refreshData() {
 async function addGuess() {
   const station = document.getElementById('station').value.trim();
   const stops = parseInt(document.getElementById('stops').value);
-  const zones = parseInt(document.getElementById('zones').value);
+  const zones = parseInt(document.querySelector('input[name="zones"]:checked').value);
   const errorEl = document.getElementById('guess-error');
 
   errorEl.textContent = '';
 
   if (!station) { errorEl.textContent = 'Enter a station name.'; return; }
   if (isNaN(stops) || stops < 0) { errorEl.textContent = 'Enter a valid stops value.'; return; }
-  if (isNaN(zones) || zones < 0) { errorEl.textContent = 'Enter a valid zones value.'; return; }
 
   const r = await fetch('/api/guess', {
     method: 'POST',
@@ -705,7 +736,7 @@ async function addGuess() {
 
   document.getElementById('station').value = '';
   document.getElementById('stops').value = '';
-  document.getElementById('zones').value = '';
+  document.querySelector('input[name="zones"][value="0"]').checked = true;
   document.getElementById('station').focus();
 
   await refreshGuesses();
@@ -895,7 +926,7 @@ document.addEventListener('click', e => {
 function selectStation(name) {
   document.getElementById('station').value = name;
   document.getElementById('stops').value = '';
-  document.getElementById('zones').value = '';
+  document.querySelector('input[name="zones"][value="0"]').checked = true;
   document.getElementById('guess-error').textContent = '';
   document.getElementById('stops').focus();
 }

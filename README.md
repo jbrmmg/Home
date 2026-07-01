@@ -16,14 +16,19 @@ A Spring Boot middle-tier service that integrates several home utilities:
 
 ## Tube Quiz Helper
 
-The container also runs a Flask web app on port 8080 (mapped to **5002** externally in production). It is a dark-themed single-page application that:
+The container also runs a Flask web app on port 8080 (mapped to **5002** externally in production). It is a dark-themed single-page application with two tabs:
 
+**Quiz Helper tab**
 - Shows TFL route data status and lets you trigger a refresh
 - Accepts guesses: a station name plus the number of stops and zones the quiz returned
 - Displays the intersected set of possible stations in both the TFL view and the merged (quiz) view, colour-coded by which view(s) each station appears in
 - Provides a collapsible per-guess breakdown for debugging
 
-The Flask app proxies all `/api/*` calls to the Java service at `http://localhost:12036/api/v1`.
+**Route Explorer tab**
+- Enter any two stations to see the shortest path between them
+- Displays stop count, zone count, and the full station-by-station path in both the TFL and merged views side-by-side
+
+The Flask app proxies `/api/*` calls to the Java service at `http://localhost:12036/api/v1`.
 
 Source: `src/main/resources/web/`
 
@@ -34,7 +39,7 @@ Source: `src/main/resources/web/`
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/routes` | Fetch TFL line data and trigger route calculation (async — poll `/routes/status`) |
-| GET | `/routes/status` | Check whether TFL and merged route calculations have completed |
+| GET | `/routes/status` | Check whether TFL and merged route calculations have completed (returns `tflReady`, `mergedReady`, `lastUpdated`) |
 | GET | `/stations` | List all station names sorted alphabetically |
 | GET | `/stops` | Find stops reachable from a station (`?station=`, `?stops=`, `?zones=`) |
 | POST | `/guess` | Add a guess — body `{"station":"…","stops":N,"zones":N}` |
@@ -42,6 +47,7 @@ Source: `src/main/resources/web/`
 | DELETE | `/guess` | Clear all guesses and start a new session |
 | GET | `/guess/results` | Stations satisfying all guesses (TFL and merged views) |
 | GET | `/guess/breakdown` | Per-guess match lists before intersection |
+| GET | `/explain` | Shortest path between two stations (`?from=`, `?to=`) — returns stops, zones, and full path in both TFL and merged views |
 
 ### Energy — base path `/api/v1/energy`
 

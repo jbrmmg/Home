@@ -32,6 +32,39 @@
     gap: 10px;
   }
 
+  /* Tabs */
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 16px;
+    border-bottom: 2px solid #444;
+    padding-bottom: 0;
+  }
+
+  .tab-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 5px 5px 0 0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    background: #2a2a4a;
+    color: #888;
+    border: 1px solid #444;
+    border-bottom: none;
+    margin-bottom: -2px;
+  }
+
+  .tab-btn.active {
+    background: #1a1a2e;
+    color: #a0d4f5;
+    border-color: #444;
+    border-bottom-color: #1a1a2e;
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
   /* Status bar */
   #status-bar {
     display: flex;
@@ -306,6 +339,97 @@
   .swatch {
     width: 10px; height: 10px; border-radius: 2px; display: inline-block;
   }
+
+  /* Route Explorer tab */
+  #explain-form {
+    background: #2a2a4a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+
+  #explain-form .fields {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 8px;
+  }
+
+  #explain-error {
+    font-size: 12px;
+    color: #f44336;
+    min-height: 16px;
+  }
+
+  #explain-results {
+    background: #2a2a4a;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 12px 14px;
+  }
+
+  .explain-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .explain-col h3 {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #444;
+  }
+
+  .explain-summary {
+    font-size: 13px;
+    color: #a0d4f5;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+
+  .path-list {
+    list-style: none;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .path-list li {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #eee;
+  }
+
+  .path-list li.path-start,
+  .path-list li.path-end {
+    color: #a0d4f5;
+    font-weight: bold;
+  }
+
+  .path-connector {
+    color: #555;
+    font-size: 11px;
+    margin-left: 6px;
+    user-select: none;
+  }
+
+  .explain-empty { font-size: 13px; color: #555; }
+
+  .explain-no-route { font-size: 13px; color: #f44336; }
+
+  .explain-merged-note {
+    font-size: 11px;
+    color: #888;
+    margin-top: 8px;
+    font-style: italic;
+  }
 </style>
 </head>
 <body>
@@ -315,12 +439,22 @@
   Tube Quiz Helper
 </h1>
 
-<!-- Status -->
+<!-- Status (always visible, above tabs) -->
 <div id="status-bar">
   <div class="status-dot" id="status-dot"></div>
   <span id="status-text">Checking...</span>
+  <span id="last-updated" style="font-size:12px; color:#666;"></span>
   <button class="btn-orange" id="refresh-btn" onclick="refreshData()" disabled>Refresh TFL Data</button>
 </div>
+
+<!-- Tab navigation -->
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab-quiz-btn" onclick="switchTab('quiz')">Quiz Helper</button>
+  <button class="tab-btn" id="tab-explore-btn" onclick="switchTab('explore')">Route Explorer</button>
+</div>
+
+<!-- ===== TAB 1: Quiz Helper ===== -->
+<div class="tab-panel active" id="tab-quiz">
 
 <!-- Guess form -->
 <div id="guess-form">
@@ -393,17 +527,90 @@
   </details>
 </div>
 
+</div><!-- end tab-quiz -->
+
+<!-- ===== TAB 2: Route Explorer ===== -->
+<div class="tab-panel" id="tab-explore">
+
+<div id="explain-form">
+  <h2>Route Explorer</h2>
+  <div class="fields">
+    <div class="field-group">
+      <label>From</label>
+      <div class="autocomplete-wrap">
+        <input type="text" id="ex-from" placeholder="e.g. Angel" autocomplete="off"
+               oninput="onExplainInput('ex-from','ex-from-dropdown')"
+               onkeydown="onExplainKey(event,'ex-from','ex-from-dropdown','ex-to')">
+        <div class="autocomplete-dropdown" id="ex-from-dropdown"></div>
+      </div>
+    </div>
+    <div class="field-group">
+      <label>To</label>
+      <div class="autocomplete-wrap">
+        <input type="text" id="ex-to" placeholder="e.g. Baker Street" autocomplete="off"
+               oninput="onExplainInput('ex-to','ex-to-dropdown')"
+               onkeydown="onExplainKey(event,'ex-to','ex-to-dropdown',null)">
+        <div class="autocomplete-dropdown" id="ex-to-dropdown"></div>
+      </div>
+    </div>
+    <button class="btn-primary" id="explain-btn" onclick="runExplain()" disabled>Explain</button>
+  </div>
+  <div id="explain-error"></div>
+</div>
+
+<div id="explain-results">
+  <h2>Route</h2>
+  <div class="explain-columns">
+    <div class="explain-col" id="ex-tfl-col">
+      <h3>TFL view</h3>
+      <div id="ex-tfl-content"><span class="explain-empty">—</span></div>
+    </div>
+    <div class="explain-col" id="ex-merged-col">
+      <h3>Merged (quiz) view</h3>
+      <div id="ex-merged-content"><span class="explain-empty">—</span></div>
+    </div>
+  </div>
+  <div id="ex-diff-note" style="margin-top:12px; display:none;">
+    <div style="font-size:12px; color:#888; border-top:1px solid #444; padding-top:10px;">
+      <strong style="color:#a0d4f5;">Why they differ:</strong>
+      the merged view collapses stations that the quiz treats as one interchange —
+      stops between them vanish, changing the count.
+    </div>
+  </div>
+</div>
+
+</div><!-- end tab-explore -->
+
 <script>
 let dataReady = false;
 let statusPollTimer = null;
 
+// ─── Tab switching ────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.getElementById('tab-' + name + '-btn').classList.add('active');
+}
+
+// ─── Quiz Helper ─────────────────────────────────────────────────────────────
 function onEnter(e) {
   if (e.key === 'Enter') addGuess();
+}
+
+function formatLastUpdated(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return 'Last updated: ' + d.toLocaleString(undefined, {
+    day: '2-digit', month: 'short', year: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
 }
 
 async function checkStatus() {
   const dot = document.getElementById('status-dot');
   const text = document.getElementById('status-text');
+  const lastUpdatedEl = document.getElementById('last-updated');
   const refreshBtn = document.getElementById('refresh-btn');
   const addBtn = document.getElementById('add-btn');
 
@@ -414,13 +621,16 @@ async function checkStatus() {
     if (s.error) {
       dot.className = 'status-dot error';
       text.textContent = 'Java API not reachable';
+      lastUpdatedEl.textContent = '';
       refreshBtn.disabled = false;
       dataReady = false;
     } else if (s.ready) {
       dot.className = 'status-dot ready';
       text.textContent = 'Ready';
+      lastUpdatedEl.textContent = formatLastUpdated(s.lastUpdated);
       refreshBtn.disabled = false;
       addBtn.disabled = false;
+      document.getElementById('explain-btn').disabled = false;
       if (!dataReady) loadStations();
       dataReady = true;
       clearInterval(statusPollTimer);
@@ -431,18 +641,22 @@ async function checkStatus() {
       if (!s.tflReady) parts.push('TFL routes');
       if (!s.mergedReady) parts.push('merged routes');
       text.textContent = `Calculating ${parts.join(' & ')}…`;
+      lastUpdatedEl.textContent = '';
       refreshBtn.disabled = true;
       addBtn.disabled = true;
+      document.getElementById('explain-btn').disabled = true;
       dataReady = false;
     } else {
       dot.className = 'status-dot';
       text.textContent = 'No data — click Refresh TFL Data to load';
+      lastUpdatedEl.textContent = '';
       refreshBtn.disabled = false;
       dataReady = false;
     }
   } catch (e) {
     dot.className = 'status-dot error';
     text.textContent = 'Error checking status';
+    lastUpdatedEl.textContent = '';
     refreshBtn.disabled = false;
     dataReady = false;
   }
@@ -460,7 +674,6 @@ async function refreshData() {
     await fetch('/api/refresh', { method: 'POST' });
   } catch (e) { /* ignore */ }
 
-  // Poll until done
   if (statusPollTimer) clearInterval(statusPollTimer);
   statusPollTimer = setInterval(checkStatus, 2000);
   checkStatus();
@@ -514,7 +727,6 @@ async function refreshGuesses() {
   const guesses = await r.json();
 
   const list = document.getElementById('guesses-list');
-  const noGuesses = document.getElementById('no-guesses');
 
   if (!guesses.length) {
     list.innerHTML = '<span id="no-guesses">No guesses yet.</span>';
@@ -571,9 +783,9 @@ async function refreshResults() {
       : '';
 }
 
-// Autocomplete
+// ─── Autocomplete (shared) ────────────────────────────────────────────────────
 let allStations = [];
-let acIndex = -1;
+let acIndexMap = {};
 
 async function loadStations() {
   try {
@@ -582,24 +794,36 @@ async function loadStations() {
   } catch (e) { /* retry next status check */ }
 }
 
-function onStationInput() {
-  document.getElementById('guess-error').textContent = '';
-  const q = document.getElementById('station').value.trim().toLowerCase();
-  acIndex = -1;
-  if (!q) { closeDropdown(); return; }
+function buildDropdown(inputId, dropdownId, q) {
+  const dropdown = document.getElementById(dropdownId);
+  acIndexMap[dropdownId] = -1;
+  if (!q) { dropdown.classList.remove('open'); dropdown.innerHTML = ''; return; }
 
   const matches = allStations.filter(s => s.toLowerCase().includes(q)).slice(0, 20);
-  if (!matches.length) { closeDropdown(); return; }
+  if (!matches.length) { dropdown.classList.remove('open'); dropdown.innerHTML = ''; return; }
 
-  const dropdown = document.getElementById('ac-dropdown');
-  dropdown.innerHTML = matches.map((s, i) => {
+  dropdown.innerHTML = matches.map(s => {
     const idx = s.toLowerCase().indexOf(q);
     const highlighted = s.slice(0, idx) +
       '<mark>' + s.slice(idx, idx + q.length) + '</mark>' +
       s.slice(idx + q.length);
-    return `<div class="ac-item" data-name="${s}" onmousedown="pickStation('${s.replace(/'/g, "\\'")}')">${highlighted}</div>`;
+    return `<div class="ac-item" data-name="${s}" onmousedown="pickAc('${inputId}','${dropdownId}','${s.replace(/'/g, "\\'")}')">${highlighted}</div>`;
   }).join('');
   dropdown.classList.add('open');
+}
+
+function pickAc(inputId, dropdownId, name) {
+  document.getElementById(inputId).value = name;
+  const dropdown = document.getElementById(dropdownId);
+  dropdown.classList.remove('open');
+  dropdown.innerHTML = '';
+  acIndexMap[dropdownId] = -1;
+}
+
+// Quiz Helper autocomplete (existing station input)
+function onStationInput() {
+  document.getElementById('guess-error').textContent = '';
+  buildDropdown('station', 'ac-dropdown', document.getElementById('station').value.trim().toLowerCase());
 }
 
 function onStationKey(e) {
@@ -608,44 +832,68 @@ function onStationKey(e) {
 
   if (e.key === 'ArrowDown') {
     e.preventDefault();
-    acIndex = Math.min(acIndex + 1, items.length - 1);
-    items.forEach((el, i) => el.classList.toggle('active', i === acIndex));
+    acIndexMap['ac-dropdown'] = Math.min((acIndexMap['ac-dropdown'] || -1) + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('active', i === acIndexMap['ac-dropdown']));
   } else if (e.key === 'ArrowUp') {
     e.preventDefault();
-    acIndex = Math.max(acIndex - 1, -1);
-    items.forEach((el, i) => el.classList.toggle('active', i === acIndex));
+    acIndexMap['ac-dropdown'] = Math.max((acIndexMap['ac-dropdown'] || -1) - 1, -1);
+    items.forEach((el, i) => el.classList.toggle('active', i === acIndexMap['ac-dropdown']));
   } else if (e.key === 'Enter') {
-    if (acIndex >= 0 && items[acIndex]) {
+    const idx = acIndexMap['ac-dropdown'] || -1;
+    if (idx >= 0 && items[idx]) {
       e.preventDefault();
-      pickStation(items[acIndex].dataset.name);
+      pickAc('station', 'ac-dropdown', items[idx].dataset.name);
+      document.getElementById('stops').focus();
     } else {
-      closeDropdown();
+      dropdown.classList.remove('open');
       addGuess();
     }
   } else if (e.key === 'Escape') {
-    closeDropdown();
+    dropdown.classList.remove('open');
   }
 }
 
-function pickStation(name) {
-  document.getElementById('station').value = name;
-  closeDropdown();
-  document.getElementById('stops').focus();
+// Route Explorer autocomplete
+function onExplainInput(inputId, dropdownId) {
+  buildDropdown(inputId, dropdownId, document.getElementById(inputId).value.trim().toLowerCase());
 }
 
-function closeDropdown() {
-  document.getElementById('ac-dropdown').classList.remove('open');
-  acIndex = -1;
+function onExplainKey(e, inputId, dropdownId, nextInputId) {
+  const dropdown = document.getElementById(dropdownId);
+  const items = dropdown.querySelectorAll('.ac-item');
+  const key = dropdownId;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    acIndexMap[key] = Math.min((acIndexMap[key] || -1) + 1, items.length - 1);
+    items.forEach((el, i) => el.classList.toggle('active', i === acIndexMap[key]));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    acIndexMap[key] = Math.max((acIndexMap[key] || -1) - 1, -1);
+    items.forEach((el, i) => el.classList.toggle('active', i === acIndexMap[key]));
+  } else if (e.key === 'Enter') {
+    const idx = acIndexMap[key] || -1;
+    if (idx >= 0 && items[idx]) {
+      e.preventDefault();
+      pickAc(inputId, dropdownId, items[idx].dataset.name);
+      if (nextInputId) document.getElementById(nextInputId).focus();
+    } else {
+      dropdown.classList.remove('open');
+      if (!nextInputId) runExplain();
+    }
+  } else if (e.key === 'Escape') {
+    dropdown.classList.remove('open');
+  }
 }
 
 document.addEventListener('click', e => {
-  if (!e.target.closest('.autocomplete-wrap')) closeDropdown();
+  if (!e.target.closest('.autocomplete-wrap')) {
+    document.querySelectorAll('.autocomplete-dropdown').forEach(d => d.classList.remove('open'));
+  }
 });
 
-// Clicking a result station pre-fills the guess form
 function selectStation(name) {
   document.getElementById('station').value = name;
-  closeDropdown();
   document.getElementById('stops').value = '';
   document.getElementById('zones').value = '';
   document.getElementById('guess-error').textContent = '';
@@ -686,7 +934,6 @@ async function refreshBreakdown() {
   `).join('<hr style="border-color:#3a3a5a;margin:10px 0;">');
 }
 
-// Toggle arrow on breakdown expand/collapse
 document.addEventListener('DOMContentLoaded', () => {
   const det = document.getElementById('breakdown-details');
   if (det) {
@@ -696,7 +943,61 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Init
+// ─── Route Explorer ───────────────────────────────────────────────────────────
+function renderPath(path) {
+  if (!path || !path.length) return '<span class="explain-no-route">No route found</span>';
+  const items = path.map((station, i) => {
+    const cls = i === 0 ? 'path-start' : i === path.length - 1 ? 'path-end' : '';
+    return `<li class="${cls}">${station}</li>`;
+  });
+  return `<ul class="path-list">${items.join('<li class="path-connector">↓</li>')}</ul>`;
+}
+
+async function runExplain() {
+  const from = document.getElementById('ex-from').value.trim();
+  const to   = document.getElementById('ex-to').value.trim();
+  const errorEl = document.getElementById('explain-error');
+
+  errorEl.textContent = '';
+
+  if (!from) { errorEl.textContent = 'Enter a From station.'; return; }
+  if (!to)   { errorEl.textContent = 'Enter a To station.'; return; }
+
+  document.getElementById('ex-tfl-content').innerHTML = '<span class="loading">Calculating…</span>';
+  document.getElementById('ex-merged-content').innerHTML = '<span class="loading">Calculating…</span>';
+  document.getElementById('ex-diff-note').style.display = 'none';
+
+  const r = await fetch(`/api/explain?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+
+  if (!r.ok) {
+    errorEl.textContent = 'Unknown station name — check spelling and try again.';
+    document.getElementById('ex-tfl-content').innerHTML = '<span class="explain-empty">—</span>';
+    document.getElementById('ex-merged-content').innerHTML = '<span class="explain-empty">—</span>';
+    return;
+  }
+
+  const data = await r.json();
+
+  function renderSide(detail) {
+    if (!detail || detail.stops < 0) {
+      return '<span class="explain-no-route">No route found</span>';
+    }
+    const zonesLabel = detail.zones <= 2 ? detail.zones : `${detail.zones} (3+)`;
+    return `<div class="explain-summary">${detail.stops} stop${detail.stops !== 1 ? 's' : ''}, ${zonesLabel} zone${detail.zones !== 1 ? 's' : ''}</div>`
+         + renderPath(detail.path);
+  }
+
+  document.getElementById('ex-tfl-content').innerHTML = renderSide(data.tfl);
+  document.getElementById('ex-merged-content').innerHTML = renderSide(data.merged);
+
+  const tflStops = data.tfl && data.tfl.stops >= 0 ? data.tfl.stops : null;
+  const mergedStops = data.merged && data.merged.stops >= 0 ? data.merged.stops : null;
+  if (tflStops !== null && mergedStops !== null && tflStops !== mergedStops) {
+    document.getElementById('ex-diff-note').style.display = 'block';
+  }
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
 checkStatus();
 refreshGuesses();
 loadStations();

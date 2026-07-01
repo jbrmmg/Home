@@ -4,13 +4,16 @@ import com.jbrmmg.home.config.ApplicationProperties;
 import com.jbrmmg.home.data.ConnectionRepository;
 import com.jbrmmg.home.data.MergedRouteRepository;
 import com.jbrmmg.home.data.RouteRepository;
+import com.jbrmmg.home.data.SettingRepository;
 import com.jbrmmg.home.data.StationRepository;
+import com.jbrmmg.home.data.entity.Setting;
 import com.jbrmmg.home.data.entity.Connection;
 import com.jbrmmg.home.data.entity.MergedRoute;
 import com.jbrmmg.home.data.entity.Route;
 import com.jbrmmg.home.data.entity.Station;
 import com.jbrmmg.home.dijkstras.graph.Graph;
 import com.jbrmmg.home.dijkstras.graph.Node;
+import com.jbrmmg.home.quiz.ExplainResult;
 import com.jbrmmg.home.quiz.Guess;
 import com.jbrmmg.home.quiz.GuessBreakdown;
 import com.jbrmmg.home.quiz.GuessResults;
@@ -23,6 +26,7 @@ import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PostConstruct;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -32,11 +36,15 @@ public class StopCalculator {
 
     private final AtomicBoolean tflReady = new AtomicBoolean(false);
     private final AtomicBoolean mergedReady = new AtomicBoolean(false);
+    private volatile Instant tflLastUpdated = null;
+
+    private static final String SETTING_TFL_LAST_UPDATED = "tfl.lastUpdated";
 
     private final StationRepository stationRepository;
     private final ConnectionRepository connectionRepository;
     private final RouteRepository routeRepository;
     private final MergedRouteRepository mergedRouteRepository;
+    private final SettingRepository settingRepository;
     private final ApplicationProperties applicationProperties;
 
     @Autowired
@@ -44,11 +52,13 @@ public class StopCalculator {
                           ConnectionRepository connectionRepository,
                           RouteRepository routeRepository,
                           MergedRouteRepository mergedRouteRepository,
+                          SettingRepository settingRepository,
                           ApplicationProperties applicationProperties) {
         this.stationRepository = stationRepository;
         this.connectionRepository = connectionRepository;
         this.routeRepository = routeRepository;
         this.mergedRouteRepository = mergedRouteRepository;
+        this.settingRepository = settingRepository;
         this.applicationProperties = applicationProperties;
     }
 
@@ -82,11 +92,13 @@ public class StopCalculator {
     public void init() {
         tflReady.set(routeRepository.count() > 0);
         mergedReady.set(mergedRouteRepository.count() > 0);
-        log.info("Route status on startup — TFL: {}, merged: {}", tflReady.get(), mergedReady.get());
+        settingRepository.findById(SETTING_TFL_LAST_UPDATED)
+                .ifPresent(s -> tflLastUpdated = Instant.parse(s.getValue()));
+        log.info("Route status on startup — TFL: {}, merged: {}, lastUpdated: {}", tflReady.get(), mergedReady.get(), tflLastUpdated);
     }
 
     public RouteStatus getStatus() {
-        return new RouteStatus(tflReady.get(), mergedReady.get());
+        return new RouteStatus(tflReady.get(), mergedReady.get(), tflLastUpdated);
     }
 
     @Async
@@ -137,6 +149,11 @@ public class StopCalculator {
         }
 
         routeRepository.saveAll(routes.values());
+        tflLastUpdated = Instant.now();
+        Setting setting = new Setting();
+        setting.setId(SETTING_TFL_LAST_UPDATED);
+        setting.setValue(tflLastUpdated.toString());
+        settingRepository.save(setting);
         tflReady.set(true);
         log.info("Done TFL routes");
     }
@@ -364,6 +381,113 @@ public class StopCalculator {
             if (s.getName().equalsIgnoreCase(name)) return s.getId();
         }
         return null;
+    }
+
+    private Station findStationByName(String name, Map<String, Station> stations) {
+        for (Station s : stations.values()) {
+            if (s.getName().equalsIgnoreCase(name)) return s;
+        }
+        return null;
+    }
+
+    public ExplainResult explain(String fromName, String toName) {
+        Map<String, Station> stations = new HashMap<>();
+        for (Station s : stationRepository.findAll()) {
+            stations.put(s.getId(), s);
+        }
+
+        Station fromStation = findStationByName(fromName, stations);
+        Station toStation = findStationByName(toName, stations);
+        if (fromStation == null || toStation == null) return null;
+
+        List<Connection> connections = new ArrayList<>(connectionRepository.findAll());
+        Map<String, String> mergeMap = buildMergeMap(stations);
+
+        ExplainResult.PathDetail tflPath = buildTflPath(fromStation, toStation, stations, connections);
+        ExplainResult.PathDetail mergedPath = buildMergedPath(fromStation, toStation, stations, mergeMap, connections);
+
+        return new ExplainResult(fromStation.getName(), toStation.getName(), tflPath, mergedPath);
+    }
+
+    private ExplainResult.PathDetail buildTflPath(Station from, Station to,
+                                                   Map<String, Station> stations,
+                                                   List<Connection> connections) {
+        Graph graph = calculateShortest(stations, connections, from);
+
+        Node destNode = graph.getNodes().stream()
+                .filter(n -> n.getName().equals(to.getId()))
+                .findFirst().orElse(null);
+
+        if (destNode == null || destNode.getDistance() == Integer.MAX_VALUE) {
+            return new ExplainResult.PathDetail(-1, -1, Collections.emptyList());
+        }
+
+        List<String> path = new ArrayList<>();
+        for (Node n : destNode.getShortestPath()) {
+            Station s = stations.get(n.getName());
+            path.add(s != null ? s.getName() : n.getName());
+        }
+        path.add(to.getName());
+
+        return new ExplainResult.PathDetail(destNode.getDistance(), Station.zoneDifference(from, to), path);
+    }
+
+    private ExplainResult.PathDetail buildMergedPath(Station from, Station to,
+                                                      Map<String, Station> stations,
+                                                      Map<String, String> mergeMap,
+                                                      List<Connection> allConnections) {
+        Map<String, Station> mergedStations = new HashMap<>();
+        for (Map.Entry<String, String> entry : mergeMap.entrySet()) {
+            mergedStations.putIfAbsent(entry.getValue(), stations.get(entry.getValue()));
+        }
+
+        List<Connection> mergedConnections = new ArrayList<>();
+        Set<String> seenIds = new HashSet<>();
+        for (Connection c : allConnections) {
+            String s1 = mergeMap.get(c.getStation1Id());
+            String s2 = mergeMap.get(c.getStation2Id());
+            if (s1 == null || s2 == null || s1.equals(s2)) continue;
+            String newId = Station.getConnectionId(s1, s2);
+            if (seenIds.add(newId)) {
+                Connection newConn = new Connection();
+                newConn.setId(newId);
+                newConn.setStation1Id(s1);
+                newConn.setStation2Id(s2);
+                mergedConnections.add(newConn);
+            }
+        }
+
+        String canonicalFromId = mergeMap.get(from.getId());
+        String canonicalToId = mergeMap.get(to.getId());
+        Station canonicalFrom = mergedStations.get(canonicalFromId);
+        Station canonicalTo = mergedStations.get(canonicalToId);
+
+        if (canonicalFrom == null || canonicalTo == null) {
+            return new ExplainResult.PathDetail(-1, -1, Collections.emptyList());
+        }
+
+        if (canonicalFromId.equals(canonicalToId)) {
+            return new ExplainResult.PathDetail(0, 0, List.of(canonicalFrom.getName()));
+        }
+
+        Graph graph = calculateShortest(mergedStations, mergedConnections, canonicalFrom);
+
+        Node destNode = graph.getNodes().stream()
+                .filter(n -> n.getName().equals(canonicalToId))
+                .findFirst().orElse(null);
+
+        if (destNode == null || destNode.getDistance() == Integer.MAX_VALUE) {
+            return new ExplainResult.PathDetail(-1, -1, Collections.emptyList());
+        }
+
+        List<String> path = new ArrayList<>();
+        for (Node n : destNode.getShortestPath()) {
+            Station s = mergedStations.get(n.getName());
+            path.add(s != null ? s.getName() : n.getName());
+        }
+        path.add(canonicalTo.getName());
+
+        return new ExplainResult.PathDetail(destNode.getDistance(), Station.zoneDifference(canonicalFrom, canonicalTo), path);
     }
 
     public String find(String stationName, Integer stops, Integer zones) {

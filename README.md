@@ -3,25 +3,60 @@
 A Spring Boot middle-tier service that integrates several home utilities:
 
 - **TFL route planner** — fetches Transport for London line data and calculates routes between stations using Dijkstra's algorithm
+- **Tube Quiz Helper** — a Flask web UI for narrowing down a mystery station by entering stop/zone clues
 - **Octopus Energy** — retrieves gas and electricity meter readings via the Octopus Energy API
 - **SMTP relay** — a simple local SMTP server that accepts and forwards emails to an external mail host
 
 ## Tech Stack
 
 - Java 17
-- Spring Boot 3.0 (Undertow, JPA, Liquibase)
+- Spring Boot 3.x (Undertow, JPA, Liquibase)
+- Python 3 + Flask + Gunicorn (web UI)
 - OpenAPI/Swagger UI (`/swagger-ui.html`)
+
+## Tube Quiz Helper
+
+The container also runs a Flask web app on port 8080 (mapped to **5002** externally in production). It is a dark-themed single-page application that:
+
+- Shows TFL route data status and lets you trigger a refresh
+- Accepts guesses: a station name plus the number of stops and zones the quiz returned
+- Displays the intersected set of possible stations in both the TFL view and the merged (quiz) view, colour-coded by which view(s) each station appears in
+- Provides a collapsible per-guess breakdown for debugging
+
+The Flask app proxies all `/api/*` calls to the Java service at `http://localhost:12036/api/v1`.
+
+Source: `src/main/resources/web/`
 
 ## REST API
 
-Base path: `/jbr/int/home`
+### Transport — base path `/api/v1/transport`
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/routes` | Refresh TFL line data and recalculate station routes |
-| GET | `/query` | Find reachable stations (`?station=`, `?stops=`, `?zones=`) |
+| GET | `/routes` | Fetch TFL line data and trigger route calculation (async — poll `/routes/status`) |
+| GET | `/routes/status` | Check whether TFL and merged route calculations have completed |
+| GET | `/stations` | List all station names sorted alphabetically |
+| GET | `/stops` | Find stops reachable from a station (`?station=`, `?stops=`, `?zones=`) |
+| POST | `/guess` | Add a guess — body `{"station":"…","stops":N,"zones":N}` |
+| GET | `/guess` | List all guesses for the current session |
+| DELETE | `/guess` | Clear all guesses and start a new session |
+| GET | `/guess/results` | Stations satisfying all guesses (TFL and merged views) |
+| GET | `/guess/breakdown` | Per-guess match lists before intersection |
+
+### Energy — base path `/api/v1/energy`
+
+| Method | Path | Description |
+|--------|------|-------------|
 | GET | `/gas` | Get gas readings (`?Key=`, `?mprn=`, `?serial=`) |
 | GET | `/electricity` | Get electricity readings (`?Key=`, `?mpan=`, `?serial=`) |
+
+## Ports
+
+| Port (host) | Container port | Service |
+|-------------|---------------|---------|
+| 12036 | 12036 | Java Spring Boot API |
+| 1025 | 1025 | SMTP relay |
+| 5002 | 8080 | Flask web UI |
 
 ## Configuration
 
@@ -95,7 +130,12 @@ The build produces a self-contained executable JAR.
 
 ## Docker
 
-The Dockerfile is at `src/main/resources/docker/Dockerfile` and runs on port 12036. Logs go to stdout and are accessible via `docker logs`.
+The Dockerfile is at `src/main/resources/docker/Dockerfile`. It:
+
+1. Installs Python 3 and creates a virtualenv at `/app/venv`
+2. Installs Flask, Gunicorn, and Requests into the venv
+3. Copies the Java JAR and the Flask web app
+4. Uses `start.sh` to launch both processes: Gunicorn on port 8080 and the Java service on port 12036
 
 To run locally using Docker Compose, create a `.env` file in the project root:
 

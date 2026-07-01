@@ -3,6 +3,7 @@ package com.jbrmmg.home.control;
 import com.jbrmmg.home.data.StationRepository;
 import com.jbrmmg.home.data.entity.Station;
 import com.jbrmmg.home.dijkstras.StopCalculator;
+import com.jbrmmg.home.quiz.ExplainResult;
 import com.jbrmmg.home.quiz.Guess;
 import com.jbrmmg.home.quiz.GuessBreakdown;
 import com.jbrmmg.home.quiz.GuessResults;
@@ -115,5 +116,17 @@ public class TransportController {
     @Operation(summary = "Per-guess breakdown", description = "Returns the individual matches for each guess before intersection")
     public @ResponseBody List<GuessBreakdown> getBreakdown() {
         return stopCalculator.findBreakdown(guessStore.getAll());
+    }
+
+    @GetMapping("/explain")
+    @Operation(summary = "Explain route", description = "Returns the shortest path between two stations in both TFL and merged views")
+    public ResponseEntity<ExplainResult> explain(
+            @Parameter(description = "Starting station name", required = true) @RequestParam("from") String from,
+            @Parameter(description = "Destination station name", required = true) @RequestParam("to") String to) {
+        ExplainResult result = stopCalculator.explain(from, to);
+        if (result == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        return ResponseEntity.ok(result);
     }
 }

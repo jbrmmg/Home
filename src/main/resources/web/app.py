@@ -86,5 +86,16 @@ def get_breakdown():
         return str(e), 500
 
 
+@app.route('/api/explain')
+def explain():
+    try:
+        r = requests.get(f"{JAVA_API}/transport/explain",
+                         params={'from': request.args.get('from'), 'to': request.args.get('to')},
+                         timeout=30)
+        return jsonify(r.json()), r.status_code
+    except Exception as e:
+        return str(e), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=8080)

@@ -31,6 +31,8 @@ home:
   station-merges:
     - - Moorgate
       - Liverpool Street
+    - - Paddington
+      - Paddington (H&C Line)-Underground
   allowed-recipients:
     - jason@jbrmmg.me.uk
     - martina@jbrmmg.me.uk

@@ -4,7 +4,6 @@ services:
     container_name: home-dev
     restart: unless-stopped
     ports:
-      - "12036:12036"
       - "1025:1025"
     environment:
       - SMTP_PASSWORD=${SMTP_PASSWORD}

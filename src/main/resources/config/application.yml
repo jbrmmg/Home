@@ -33,6 +33,8 @@ home:
       - Liverpool Street
     - - Paddington
       - Paddington (H&C Line)-Underground
+    - - Bank
+      - Monument
   allowed-recipients:
     - jason@jbrmmg.me.uk
     - martina@jbrmmg.me.uk

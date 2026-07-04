@@ -4,7 +4,6 @@ services:
     container_name: home
     restart: unless-stopped
     ports:
-      - "12036:12036"
       - "1025:1025"
     volumes:
       - /var/lib/home/data:/app/data

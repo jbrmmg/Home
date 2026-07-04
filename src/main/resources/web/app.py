@@ -1,8 +1,10 @@
 import os
 import requests
 from flask import Flask, render_template, request, jsonify
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_prefix=1)
 
 JAVA_API = os.environ.get("JAVA_API_URL", "http://localhost:12036") + "/api/v1"
 

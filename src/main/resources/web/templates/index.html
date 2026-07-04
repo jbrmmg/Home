@@ -647,7 +647,7 @@ async function checkStatus() {
   const addBtn = document.getElementById('add-btn');
 
   try {
-    const r = await fetch('/api/status');
+    const r = await fetch('api/status');
     const s = await r.json();
 
     if (s.error) {
@@ -703,7 +703,7 @@ async function refreshData() {
   text.textContent = 'Fetching TFL data…';
 
   try {
-    await fetch('/api/refresh', { method: 'POST' });
+    await fetch('api/refresh', { method: 'POST' });
   } catch (e) { /* ignore */ }
 
   if (statusPollTimer) clearInterval(statusPollTimer);
@@ -722,7 +722,7 @@ async function addGuess() {
   if (!station) { errorEl.textContent = 'Enter a station name.'; return; }
   if (isNaN(stops) || stops < 0) { errorEl.textContent = 'Enter a valid stops value.'; return; }
 
-  const r = await fetch('/api/guess', {
+  const r = await fetch('api/guess', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ station, stops, zones }),
@@ -745,7 +745,7 @@ async function addGuess() {
 }
 
 async function resetGuesses() {
-  await fetch('/api/guesses', { method: 'DELETE' });
+  await fetch('api/guesses', { method: 'DELETE' });
   await refreshGuesses();
   document.getElementById('tfl-results').innerHTML = '<span class="results-empty">—</span>';
   document.getElementById('merged-results').innerHTML = '<span class="results-empty">—</span>';
@@ -754,7 +754,7 @@ async function resetGuesses() {
 }
 
 async function refreshGuesses() {
-  const r = await fetch('/api/guesses');
+  const r = await fetch('api/guesses');
   const guesses = await r.json();
 
   const list = document.getElementById('guesses-list');
@@ -777,7 +777,7 @@ async function refreshResults() {
   document.getElementById('merged-results').innerHTML = '<span class="loading">Calculating…</span>';
   document.getElementById('results-count').textContent = '';
 
-  const r = await fetch('/api/results');
+  const r = await fetch('api/results');
   const data = await r.json();
 
   const tflSet = new Set(data.tfl || []);
@@ -820,7 +820,7 @@ let acIndexMap = {};
 
 async function loadStations() {
   try {
-    const r = await fetch('/api/stations');
+    const r = await fetch('api/stations');
     if (r.ok) allStations = await r.json();
   } catch (e) { /* retry next status check */ }
 }
@@ -935,7 +935,7 @@ async function refreshBreakdown() {
   const section = document.getElementById('breakdown-section');
   const content = document.getElementById('breakdown-content');
 
-  const r = await fetch('/api/breakdown');
+  const r = await fetch('api/breakdown');
   const items = await r.json();
 
   if (!items.length) {
@@ -998,7 +998,7 @@ async function runExplain() {
   document.getElementById('ex-merged-content').innerHTML = '<span class="loading">Calculating…</span>';
   document.getElementById('ex-diff-note').style.display = 'none';
 
-  const r = await fetch(`/api/explain?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
+  const r = await fetch(`api/explain?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`);
 
   if (!r.ok) {
     errorEl.textContent = 'Unknown station name — check spelling and try again.';

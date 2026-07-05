@@ -5,6 +5,16 @@ services:
     restart: unless-stopped
     ports:
       - "1025:1025"
+    volumes:
+      - /var/lib/home/data:/app/data
     environment:
       - SMTP_PASSWORD=${SMTP_PASSWORD}
       - EMAIL_KEY=${EMAIL_KEY}
+    networks:
+      jbr-network:
+        aliases:
+          - home
+
+networks:
+  jbr-network:
+    external: true

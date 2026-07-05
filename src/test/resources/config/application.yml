@@ -12,6 +12,10 @@ spring:
       poolName: Hikari
       auto-commit: false
 
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
   h2:
     console:
       enabled: true

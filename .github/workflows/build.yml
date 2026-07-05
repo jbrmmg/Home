@@ -67,7 +67,7 @@ jobs:
           EOF
 
       - name: Build with Maven
-        run: mvn package -DskipTests
+        run: mvn verify
 
       - name: Build Docker image
         run: |

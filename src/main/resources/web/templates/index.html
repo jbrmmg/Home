@@ -667,7 +667,7 @@ async function checkStatus() {
       dataReady = true;
       clearInterval(statusPollTimer);
       statusPollTimer = null;
-    } else if (!s.tflReady || !s.mergedReady) {
+    } else if (s.calculating) {
       dot.className = 'status-dot busy';
       const parts = [];
       if (!s.tflReady) parts.push('TFL routes');

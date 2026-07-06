@@ -36,6 +36,8 @@ public class StopCalculator {
 
     private final AtomicBoolean tflReady = new AtomicBoolean(false);
     private final AtomicBoolean mergedReady = new AtomicBoolean(false);
+    private final AtomicBoolean tflCalculating = new AtomicBoolean(false);
+    private final AtomicBoolean mergedCalculating = new AtomicBoolean(false);
     private volatile Instant tflLastUpdated = null;
 
     private static final String SETTING_TFL_LAST_UPDATED = "tfl.lastUpdated";
@@ -98,11 +100,13 @@ public class StopCalculator {
     }
 
     public RouteStatus getStatus() {
-        return new RouteStatus(tflReady.get(), mergedReady.get(), tflLastUpdated);
+        boolean calculating = tflCalculating.get() || mergedCalculating.get();
+        return new RouteStatus(tflReady.get(), mergedReady.get(), calculating, tflLastUpdated);
     }
 
     @Async
     public void calculateRoutes() {
+        tflCalculating.set(true);
         tflReady.set(false);
         routeRepository.deleteAll();
 
@@ -155,11 +159,13 @@ public class StopCalculator {
         setting.setValue(tflLastUpdated.toString());
         settingRepository.save(setting);
         tflReady.set(true);
+        tflCalculating.set(false);
         log.info("Done TFL routes");
     }
 
     @Async
     public void calculateMergedRoutes() {
+        mergedCalculating.set(true);
         mergedReady.set(false);
         mergedRouteRepository.deleteAll();
 
@@ -231,6 +237,7 @@ public class StopCalculator {
 
         mergedRouteRepository.saveAll(routes.values());
         mergedReady.set(true);
+        mergedCalculating.set(false);
         log.info("Done merged routes");
     }
 

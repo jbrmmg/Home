@@ -11,7 +11,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 public class SimpleSmtpServer {
@@ -19,13 +18,11 @@ public class SimpleSmtpServer {
 
     private final ExecutorService pool = Executors.newFixedThreadPool(5);
 
-    private final AtomicInteger messageCounter = new AtomicInteger(0);
-
-    private final MailForwarder forwarder;
+    private final EmailRateLimiter rateLimiter;
     private final ApplicationProperties applicationProperties;
 
-    public SimpleSmtpServer(MailForwarder forwarder, ApplicationProperties applicationProperties) {
-        this.forwarder = forwarder;
+    public SimpleSmtpServer(EmailRateLimiter rateLimiter, ApplicationProperties applicationProperties) {
+        this.rateLimiter = rateLimiter;
         this.applicationProperties = applicationProperties;
         start();
     }
@@ -94,15 +91,7 @@ public class SimpleSmtpServer {
                         writer.flush();
                         dataMode = false;
 
-                        // enforce rate limit
-                        if (messageCounter.incrementAndGet() > applicationProperties.getEmail().getMax()) {
-                            LOG.warn("Message limit exceeded, ignoring.");
-                            client.close();
-                            return;
-                        }
-
-                        // forward email using Jakarta Mail
-                        forwarder.forward(emailData.toString().getBytes(), currentRecipient);
+                        rateLimiter.submit(emailData.toString().getBytes(), currentRecipient);
                         emailData.setLength(0);
                     } else {
                         emailData.append(line).append("\r\n");

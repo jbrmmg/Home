@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class EmailProperties {
     private Integer port;
-    private Integer max;
+    private Integer ratePerMinute;
     private String smtpHost;
     private Integer smtpPort;
     private String smtpSender;

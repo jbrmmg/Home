@@ -42,7 +42,7 @@ home:
     - thomas@jbrmmg.me.uk
   email:
     port: 1025
-    max: 30
+    rate-per-minute: 2
     smtp-host: smtp.zoho.eu
     smtp-port: 587
     smtp-sender: system@jbrmmg.me.uk
